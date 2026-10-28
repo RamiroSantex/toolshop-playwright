@@ -55,6 +55,8 @@ jobs:
       - name: Healthcheck de la API
         run: |
           curl -fsS http://localhost:8091/status
+          curl -sS http://localhost:8091/brands | head -c 1500 || true
+          echo
           curl -fsS -X POST http://localhost:8091/users/login \
             -H 'Content-Type: application/json' \
             --data-raw '{"email":"customer@practicesoftwaretesting.com","password":"welcome01"}' | head -c 120
