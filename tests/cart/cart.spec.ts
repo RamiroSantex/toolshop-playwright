@@ -14,7 +14,7 @@ test.describe('Carrito - edicion', () => {
     await qty.blur();
     await update;
 
-    await expect(page.getByTestId('line-total-price')).toHaveText(fmt(4 * price));
+    await expect(page.getByTestId('line-price')).toHaveText(fmt(4 * price));
     await expect(page.getByTestId('cart-total')).toHaveText(fmt(4 * price));
     await expect(page.getByTestId('nav-cart')).toHaveText('4');
   });
