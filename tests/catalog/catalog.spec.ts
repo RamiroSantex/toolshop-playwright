@@ -8,7 +8,7 @@ test.describe('Catalogo', () => {
     await expect(names.first()).toBeVisible();
     const search = page.waitForResponse((r) => r.url().includes('/products/search') && r.ok());
     await page.getByTestId('search-query').fill('hammer');
-    await page.getByTestId('search-submit').click();
+    await page.getByTestId('search-button').click();
     await search;
     // El resultado se renderiza async: esperar a que el primer producto ya sea el filtrado.
     await expect(names.first()).toContainText(/hammer/i);
