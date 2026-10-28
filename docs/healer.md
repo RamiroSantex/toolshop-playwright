@@ -28,3 +28,13 @@ Commit de reparacion: `0bba430` - "Hito 7: reparacion del test por el Healer"
 
 ## Resultado
 Suite completa: 15 passed (23.9s), 15/15.
+
+---
+
+## Ronda 2 — Healer REAL (agente playwright-test-healer + MCP playwright-test)
+
+- Rotura intencional: commit `7e1f2b5` (RG-05: `search-submit` -> `search-button`). Fallo: timeout en `locator.click` y `waitForResponse`.
+- Se invoco el agente `.claude/agents/playwright-test-healer.md` en una sesion de Claude Code dentro del repo, con el MCP `playwright-test` (`.mcp.json`: `npx playwright run-test-mcp-server`).
+- Herramientas MCP usadas: `test_run` (antes y despues) y `test_debug` (el snapshot mostro el boton "Search"). `browser_generate_locator` y `browser_evaluate` fallaron con "Test has already stopped".
+- Limite honesto: el snapshot dio el nombre accesible, no el `data-test`; el agente tomo el id del mensaje del commit de rotura. Que RG-05 pase confirma el locator.
+- Reparacion: commit `e02233f` (`search-button` -> `search-submit`). RG-05 y RG-06 pasan.
