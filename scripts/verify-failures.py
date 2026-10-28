@@ -17,13 +17,13 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # (id, archivo, texto original, texto mutado, que simula)
 MUTATIONS = [
-    ("RG-01", "tests/auth/login.spec.ts", "toHaveText('Jane Doe')", "toHaveText('John Doe')",
+    ("RG-01", "tests/auth/login.spec.ts", "toHaveText(CUSTOMER.name)", "toHaveText('John Doe')",
      "el login muestra otro usuario"),
-    ("RG-02", "tests/auth/login.spec.ts", "fill('password-incorrecto')", "fill(CUSTOMER.password)",
-     "la app acepta cualquier credencial valida donde se esperaba rechazo (equivale a bug de autenticacion)"),
+    ("RG-02", "tests/auth/login.spec.ts", "toHaveText('Invalid email or password')", "toHaveText('Credenciales invalidas')",
+     "la app cambia/pierde el mensaje de error ante credenciales invalidas"),
     ("RG-03", "tests/auth/login.spec.ts", "'Email is required'", "'Email is mandatory'",
      "cambia/desaparece el mensaje de validacion de email"),
-    ("RG-04", "tests/auth/login.spec.ts", "getByTestId('login-form')).toBeVisible()", "getByTestId('login-form')).toBeHidden()",
+    ("RG-04", "tests/auth/login.spec.ts", "new LoginPage(page).form).toBeVisible()", "new LoginPage(page).form).toBeHidden()",
      "la app no muestra el formulario de login al redirigir una ruta protegida"),
     ("RG-05", "tests/catalog/catalog.spec.ts", "toMatch(/hammer/i)", "toMatch(/pliers/i)",
      "la busqueda devuelve productos que no coinciden"),
@@ -35,8 +35,8 @@ MUTATIONS = [
      "el total no se recalcula bien al cambiar la cantidad"),
     ("RG-09", "tests/cart/cart.spec.ts", ".locator('.btn-danger').click()", ".locator('.btn-danger').hover()",
      "el boton eliminar no elimina la linea"),
-    ("RG-10", "tests/checkout/checkout.spec.ts", "fill('welcome01')", "fill('welcome-mal')",
-     "el login del checkout falla y el pedido no se puede completar"),
+    ("RG-10", "tests/checkout/checkout.spec.ts", "toHaveText('Payment was successful')", "toHaveText('Payment failed')",
+     "el pago no se verifica y el pedido no puede completarse"),
 ]
 
 

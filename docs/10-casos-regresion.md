@@ -13,7 +13,7 @@ Usuario de prueba publico: `customer@practicesoftwaretesting.com` / `welcome01`.
 | # | ID | Caso | Area | Riesgo | Tiempo | Prioridad | Por que entra a regresion |
 |---|----|------|------|--------|--------|-----------|---------------------------|
 | 1 | RG-01 | Login valido redirige a `/account` y muestra el nombre del usuario | Auth | A | R | P1 | Sin login no se puede comprar ni ver facturas; todo depende de esto |
-| 2 | RG-02 | Login con password incorrecto muestra "Invalid email or password" y no inicia sesion | Auth | A | R | P1 | Regresion de seguridad: no debe autenticar credenciales invalidas |
+| 2 | RG-02 | Login con credenciales invalidas muestra "Invalid email or password" y no inicia sesion | Auth | A | R | P1 | Regresion de seguridad: no debe autenticar credenciales invalidas (se prueba con email inexistente: la app bloquea la cuenta real tras varios fallos) |
 | 3 | RG-03 | Login con campos vacios muestra validaciones de email y password requeridos | Auth | M | R | P2 | Validacion de formulario, cambia con frecuencia en el front |
 | 4 | RG-04 | Acceder a `/account` sin sesion redirige a `/auth/login` | Auth / seguridad | A | R | P1 | Control de acceso a datos de cuenta |
 | 5 | RG-05 | Busqueda por texto devuelve solo productos que coinciden con el termino | Catalogo | M | R | P2 | Flujo de entrada principal a la compra |
@@ -31,12 +31,12 @@ Usuario de prueba publico: `customer@practicesoftwaretesting.com` / `welcome01`.
 
 ## Fuera de alcance de los 10 (cubiertos aparte)
 
-- Hito 6: 2+ casos por API (`POST /users/login`, `GET /products`) y Page Object de login.
+- Hito 6: 4 casos por API (`tests/api/api.spec.ts`: login, 401, carrito, orden de productos) y Page Object de login (`tests/pages/LoginPage.ts`).
 - Backlog: favoritos, comparar productos, registro de usuario, facturas (PDF), filtros por categoria/eco, otros metodos de pago, i18n.
 
 ## Notas de automatizacion
 
 - La UI cambia de idioma segun el locale del navegador; la config fija `locale: 'en-US'`.
 - El atributo de test es `data-test` (no `data-testid`): `testIdAttribute: 'data-test'` en `playwright.config.ts`.
-- Los ids de producto son ULIDs que pueden cambiar si la demo se resiembra: los tests navegan por nombre visible, no por id.
+- Los ids de producto son ULIDs que pueden cambiar si la demo se resiembra: los tests nunca hardcodean ids ni productos: piden a `GET /products` uno con stock (`pickInStockProducts`) en cada corrida.
 - El carrito se persiste con una llamada asincrona: antes de navegar hay que esperar que el badge `nav-cart` refleje las unidades.

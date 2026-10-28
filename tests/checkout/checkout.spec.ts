@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { LoginPage } from '../pages/LoginPage';
+import { CUSTOMER } from '../support/users';
 import { addToCart, fmt, pickInStockProducts } from '../support/cart';
 
 test.describe('Checkout', () => {
@@ -10,9 +12,7 @@ test.describe('Checkout', () => {
     await page.getByTestId('proceed-1').click();
 
     // Paso 2: login dentro del checkout
-    await page.getByTestId('email').fill('customer@practicesoftwaretesting.com');
-    await page.getByTestId('password').fill('welcome01');
-    await page.getByTestId('login-submit').click();
+    await new LoginPage(page).login(CUSTOMER.email, CUSTOMER.password);
     await expect(page.getByTestId('proceed-2')).toBeVisible();
     await page.getByTestId('proceed-2').click();
 

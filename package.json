@@ -1,9 +1,13 @@
 {
   "name": "toolshop-playwright",
   "version": "1.0.0",
-  "description": "",
+  "description": "Suite Playwright sobre Toolshop (practicesoftwaretesting.com)",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "playwright test",
+    "test:api": "playwright test tests/api",
+    "verify:failures": "python scripts/verify-failures.py"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
