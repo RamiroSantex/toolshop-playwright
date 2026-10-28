@@ -1,37 +1,36 @@
-// spec: specs/regression-plan.md
+// spec: specs/agentes-plan.md
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-const money = (text: string | null) => Number((text ?? '').replace(/[^0-9.]/g, ''));
-const fmt = (n: number) => `$${n.toFixed(2)}`;
+const API = 'https://api.practicesoftwaretesting.com';
 
-test.describe('Carrito - edicion', () => {
-  test('RG-08 Cambio de cantidad', async ({ page }) => {
-    // 1. Agregar 1x Combination Pliers.
-    await page.goto('/');
-    await expect(page.getByTestId('product-name').first()).toBeVisible();
-    const search = page.waitForResponse((r) => r.url().includes('/products/search') && r.ok());
-    await page.getByTestId('search-query').fill('Combination Pliers');
-    await page.getByTestId('search-submit').click();
-    await search;
-    await page.getByTestId('product-name').filter({ hasText: 'Combination Pliers' }).first().click();
-    await expect(page.getByTestId('product-name')).toHaveText('Combination Pliers');
-    const price = money(await page.getByTestId('unit-price').textContent());
+test.describe('Carrito', () => {
+  test('RG-08 Cambiar la cantidad recalcula linea, total y badge', async ({ page, request }) => {
+    // 1. Agregar un producto con stock y abrir el carrito
+    const res = await request.get(`${API}/products`);
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    const product = body.data.find(
+      (p: { in_stock: boolean; is_rental: boolean }) => p.in_stock && !p.is_rental,
+    );
+    const unitPrice: number = product.price;
+
+    await page.goto(`/product/${product.id}`);
+    await expect(page.getByTestId('add-to-cart')).toBeVisible();
     await page.getByTestId('add-to-cart').click();
-    await expect(page.getByTestId('nav-cart')).toHaveText('1');
+    await expect(page.getByTestId('cart-quantity')).toHaveText('1');
+    await page.getByTestId('nav-cart').click();
 
-    // 2. Ir a /checkout y cambiar la cantidad a 4.
-    await page.goto('/checkout');
-    await expect(page.getByTestId('cart-total')).toHaveText(fmt(price));
+    await expect(page.getByTestId('product-quantity')).toHaveValue('1');
+    await expect(page.getByTestId('cart-total')).toHaveText(`$${unitPrice.toFixed(2)}`);
 
-    const qty = page.getByTestId('product-quantity');
-    const update = page.waitForResponse((r) => r.url().includes('/carts/') && r.request().method() === 'PUT');
-    await qty.fill('4');
-    await qty.blur();
-    await update;
+    // 2. Cambiar product-quantity a 3 y salir del campo
+    await page.getByTestId('product-quantity').fill('3');
+    await page.getByTestId('product-quantity').blur();
 
-    await expect(page.getByTestId('line-price')).toHaveText(fmt(4 * price));
-    await expect(page.getByTestId('cart-total')).toHaveText(fmt(4 * price));
-    await expect(page.getByTestId('nav-cart')).toHaveText('4');
+    const expectedTotal = `$${(unitPrice * 3).toFixed(2)}`;
+    await expect(page.getByTestId('line-price')).toHaveText(expectedTotal);
+    await expect(page.getByTestId('cart-total')).toHaveText(expectedTotal);
+    await expect(page.getByTestId('cart-quantity')).toHaveText('3');
   });
 });

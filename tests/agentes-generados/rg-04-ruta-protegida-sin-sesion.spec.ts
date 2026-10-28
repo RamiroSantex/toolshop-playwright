@@ -1,13 +1,14 @@
-// spec: specs/regression-plan.md
+// spec: specs/agentes-plan.md
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-test.describe('Login', () => {
-  test('RG-04 Ruta protegida sin sesion', async ({ page }) => {
-    // 1. Ir directo a /account sin sesion.
+test.describe('Auth', () => {
+  test('RG-04 Acceder a /account sin sesion redirige a /auth/login', async ({ page }) => {
+    // 1. Con contexto limpio navegar directo a /account
     await page.goto('/account');
 
-    await expect(page).toHaveURL(/\/auth\/login/);
-    await expect(page.getByTestId('login-form')).toBeVisible();
+    await expect(page).toHaveURL(/\/auth\/login$/);
+    await expect(page.getByTestId('login-submit')).toBeVisible();
+    await expect(page.getByTestId('page-title')).toHaveCount(0);
   });
 });

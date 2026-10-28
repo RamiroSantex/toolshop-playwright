@@ -1,28 +1,32 @@
-// spec: specs/regression-plan.md
+// spec: specs/agentes-plan.md
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-test.describe('Carrito - edicion', () => {
-  test('RG-09 Eliminar producto', async ({ page }) => {
-    // 1. Agregar 1x Combination Pliers.
-    await page.goto('/');
-    await expect(page.getByTestId('product-name').first()).toBeVisible();
-    const search = page.waitForResponse((r) => r.url().includes('/products/search') && r.ok());
-    await page.getByTestId('search-query').fill('Combination Pliers');
-    await page.getByTestId('search-submit').click();
-    await search;
-    await page.getByTestId('product-name').filter({ hasText: 'Combination Pliers' }).first().click();
-    await expect(page.getByTestId('product-name')).toHaveText('Combination Pliers');
+const API = 'https://api.practicesoftwaretesting.com';
+
+test.describe('Carrito', () => {
+  test('RG-09 Eliminar el unico producto deja el carrito vacio', async ({ page, request }) => {
+    // 1. Agregar un producto con stock, ir al carrito y eliminar la linea
+    const res = await request.get(`${API}/products`);
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    const product = body.data.find(
+      (p: { in_stock: boolean; is_rental: boolean }) => p.in_stock && !p.is_rental,
+    );
+
+    await page.goto(`/product/${product.id}`);
+    await expect(page.getByTestId('add-to-cart')).toBeVisible();
     await page.getByTestId('add-to-cart').click();
-    await expect(page.getByTestId('nav-cart')).toHaveText('1');
+    await expect(page.getByTestId('cart-quantity')).toHaveText('1');
+    await page.getByTestId('nav-cart').click();
+    await expect(page).toHaveURL(/\/checkout$/);
 
-    // 2. Ir a /checkout, eliminar la linea.
-    await page.goto('/checkout');
-    await expect(page.getByTestId('product-title')).toHaveText('Combination Pliers');
-    await page.locator('tr', { hasText: 'Combination Pliers' }).locator('.btn-danger').click();
+    await page.locator('table a.btn-danger').click();
 
-    await expect(page.getByTestId('product-title')).toHaveCount(0);
-    await expect(page.getByText('The cart is empty')).toBeVisible();
-    await expect(page.getByTestId('nav-cart')).toBeHidden();
+    await expect(page.getByRole('alert').filter({ hasText: 'Product deleted.' })).toBeVisible();
+    await expect(page.locator('table')).toHaveCount(0);
+    await expect(page.getByText('The cart is empty. Nothing to display.')).toBeVisible();
+    await expect(page.getByTestId('cart-quantity')).toHaveCount(0);
+    await expect(page.getByTestId('proceed-1')).toHaveCount(0);
   });
 });

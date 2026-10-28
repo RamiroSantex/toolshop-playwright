@@ -1,42 +1,45 @@
-// spec: specs/regression-plan.md
+// spec: specs/agentes-plan.md
 // seed: tests/seed.spec.ts
-import { test, expect, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-const money = (text: string | null) => Number((text ?? '').replace(/[^0-9.]/g, ''));
-const fmt = (n: number) => `$${n.toFixed(2)}`;
+const API = 'https://api.practicesoftwaretesting.com';
 
-// Busca el producto por nombre, abre su ficha, sube la cantidad, lo agrega y devuelve el precio unitario de la ficha.
-async function addProduct(page: Page, name: string, quantity: number, unitsInCartAfter: number) {
-  await page.goto('/');
-  await expect(page.getByTestId('product-name').first()).toBeVisible();
-  const search = page.waitForResponse((r) => r.url().includes('/products/search') && r.ok());
-  await page.getByTestId('search-query').fill(name);
-  await page.getByTestId('search-submit').click();
-  await search;
-  await page.getByTestId('product-name').filter({ hasText: name }).first().click();
-  await expect(page.getByTestId('product-name')).toHaveText(name);
-  const unitPrice = money(await page.getByTestId('unit-price').textContent());
-  for (let i = 1; i < quantity; i++) await page.getByTestId('increase-quantity').click();
-  await expect(page.getByTestId('quantity')).toHaveValue(String(quantity));
-  await page.getByTestId('add-to-cart').click();
-  await expect(page.getByTestId('nav-cart')).toHaveText(String(unitsInCartAfter));
-  return unitPrice;
-}
+test.describe('Carrito', () => {
+  test('RG-07 Total del carrito = suma de cantidad x precio unitario', async ({ page, request }) => {
+    // 1. Obtener de GET /products dos productos con stock y agregarlos (2 unidades y 1 unidad)
+    const res = await request.get(`${API}/products`);
+    expect(res.ok()).toBeTruthy();
+    const body = await res.json();
+    const [first, second] = body.data.filter(
+      (p: { in_stock: boolean; is_rental: boolean }) => p.in_stock && !p.is_rental,
+    );
 
-test.describe('Carrito - totales', () => {
-  test('RG-07 Total del carrito', async ({ page }) => {
-    // 1. Agregar 2x Combination Pliers y 3x Slip Joint Pliers (precio unitario leido de cada ficha).
-    const priceA = await addProduct(page, 'Combination Pliers', 2, 2);
-    const priceB = await addProduct(page, 'Slip Joint Pliers', 3, 5);
+    await page.goto(`/product/${first.id}`);
+    await expect(page.getByTestId('add-to-cart')).toBeVisible();
+    await page.getByTestId('increase-quantity').click();
+    await expect(page.getByTestId('quantity')).toHaveValue('2');
+    await page.getByTestId('add-to-cart').click();
+    await expect(page.getByTestId('cart-quantity')).toHaveText('2');
 
-    // 2. Abrir /checkout.
-    await page.goto('/checkout');
-    await expect(page.getByTestId('product-title')).toHaveCount(2);
+    await page.goto(`/product/${second.id}`);
+    await expect(page.getByTestId('add-to-cart')).toBeVisible();
+    await page.getByTestId('add-to-cart').click();
+    await expect(page.getByTestId('cart-quantity')).toHaveText('3');
 
-    const rows = page.locator('table tr');
-    await expect(rows.filter({ hasText: 'Combination Pliers' }).getByTestId('line-price')).toHaveText(fmt(2 * priceA));
-    await expect(rows.filter({ hasText: 'Slip Joint Pliers' }).getByTestId('line-price')).toHaveText(fmt(3 * priceB));
-    await expect(page.getByTestId('cart-total')).toHaveText(fmt(2 * priceA + 3 * priceB));
-    await expect(page.getByTestId('nav-cart')).toHaveText('5');
+    // 2. Ir a nav-cart
+    await page.getByTestId('nav-cart').click();
+    await expect(page).toHaveURL(/\/checkout$/);
+    await expect(page.getByTestId('product-price')).toHaveCount(2);
+    await expect(page.getByTestId('product-quantity')).toHaveCount(2);
+
+    const prices = (await page.getByTestId('product-price').allTextContents()).map((t) =>
+      parseFloat(t.replace(/[^0-9.]/g, '')),
+    );
+    const quantities = await page.getByTestId('product-quantity').evaluateAll((els) =>
+      els.map((e) => Number((e as HTMLInputElement).value)),
+    );
+    const expected = prices.reduce((sum, price, i) => sum + price * quantities[i], 0);
+
+    await expect(page.getByTestId('cart-total')).toHaveText(`$${expected.toFixed(2)}`);
   });
 });

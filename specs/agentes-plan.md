@@ -2,7 +2,7 @@
 
 ## Application Overview
 
-Plan de prueba para los 10 casos de regresion de docs/10-casos-regresion.md sobre https://practicesoftwaretesting.com (Toolshop, Angular). Atributo de test: data-test (getByTestId). Locale en-US. Usuario valido: customer@practicesoftwaretesting.com / welcome01. NUNCA hacer logins fallidos con esa cuenta (se bloquea): para credenciales invalidas usar noexiste.qa@example.com. No hardcodear ids/productos: elegir productos con stock desde GET /products. Selectores observados en exploracion: email, password, login-submit, login-error, email-error, password-error, nav-menu, page-title, search-query, search-submit, search-reset, search-caption, sort, product-name, product-price, add-to-cart, quantity, increase-quantity, nav-cart, cart-quantity, product-quantity, cart-total, proceed-1/2/3, street, city, state, country (select), postal_code, payment-method, finish. Nota: los pasos finales del checkout (mensaje y confirmacion con numero de factura) NO se pudieron verificar en la exploracion (la sesion se colgo); sus selectores son por confirmar.
+Plan de prueba para los 10 casos de regresion de docs/10-casos-regresion.md sobre https://practicesoftwaretesting.com (Toolshop, Angular). Atributo de test: data-test (getByTestId). Locale en-US. Usuario valido: customer@practicesoftwaretesting.com / welcome01. NUNCA hacer logins fallidos con esa cuenta (se bloquea): para credenciales invalidas usar noexiste.qa@example.com. No hardcodear ids/productos: elegir productos con stock desde GET /products. Selectores observados en exploracion: email, password, login-submit, login-error, email-error, password-error, nav-menu, page-title, search-query, search-submit, search-reset, search-caption, sort, product-name, product-price, add-to-cart, quantity, increase-quantity, nav-cart, cart-quantity, product-quantity, cart-total, proceed-1/2/3, street, city, state, country (select), postal_code, payment-method, finish. Selectores adicionales confirmados en la segunda pasada sobre el sitio real: house_number, payment-success-message, #order-confirmation (sin data-test), boton eliminar `table a.btn-danger` (sin data-test). Pendientes: ver 'Pendiente de confirmar' en RG-10. La URL del carrito es /checkout.
 
 ## Test Scenarios
 
@@ -109,11 +109,12 @@ Plan de prueba para los 10 casos de regresion de docs/10-casos-regresion.md sobr
 **File:** `tests/cart/rg-09-eliminar-producto.spec.ts`
 
 **Steps:**
-  1. Agregar un producto con stock, ir al carrito y click en el boton de eliminar de la linea (selector por confirmar, no verificado en la exploracion)
-    - expect: La linea desaparece
-    - expect: Se muestra el mensaje de carrito vacio
-    - expect: El badge se oculta o muestra 0
-    - expect: No hay boton proceed-1 activo
+  1. Agregar un producto con stock, ir al carrito (nav-cart; la URL del carrito es /checkout) y click en el boton de eliminar de la linea. CONFIRMADO en el sitio real: es un <a class="btn btn-danger"> dentro de la tabla (icono xmark, sin texto, sin data-test, sin nombre accesible). Selector: page.locator('table a.btn-danger') (1 por linea; con una sola linea no hay ambiguedad)
+    - expect: Aparece el alert/toast 'Product deleted.' (role alert)
+    - expect: La tabla de lineas desaparece
+    - expect: Se muestra el texto 'The cart is empty. Nothing to display.' (elemento <p> sin data-test; usar getByText)
+    - expect: El badge cart-quantity deja de existir en el DOM (count 0), no muestra 0
+    - expect: No existe proceed-1
 
 ### 4. Checkout
 
@@ -125,12 +126,14 @@ Plan de prueba para los 10 casos de regresion de docs/10-casos-regresion.md sobr
 
 **Steps:**
   1. Agregar un producto con stock, ir a nav-cart, click en proceed-1
-    - expect: La URL es /checkout y se pide autenticacion si no hay sesion
-  2. Iniciar sesion con customer@practicesoftwaretesting.com / welcome01 (login valido, no fallido) y click en proceed-2
-    - expect: Aparece el formulario de direccion con street, city, state, country (select), postal_code
-  3. Completar street, city, state, seleccionar country con selectOption (p.ej. 'AR', no usar fill) y postal_code; click en proceed-3
-    - expect: Se muestra el paso de pago con payment-method
-  4. Seleccionar payment-method = cash-on-delivery y click en finish
-    - expect: Mensaje de pago exitoso (selector por confirmar)
-  5. Click en finish/confirmar nuevamente si la app lo pide
-    - expect: Se muestra la confirmacion del pedido con un numero de factura (formato y selector por confirmar, no verificado en la exploracion)
+    - expect: La URL es /checkout (el carrito y el checkout comparten URL; es un stepper Cart, Sign in, Billing Address, Payment)
+  2. Con sesion ya iniciada (login valido previo con customer@practicesoftwaretesting.com / welcome01) click en proceed-2. NO VERIFICADO: el paso 'Sign in' sin sesion previa (no se hizo un segundo login)
+    - expect: Aparece 'Billing Address' con country (SELECT), postal_code, house_number, street, city, state; street y city llegan pre-cargados del perfil; proceed-3 esta habilitado (confirmado)
+  3. selectOption en country (label 'Austria' probado; value 'AR' NO probado), completar postal_code '1010', house_number '98', street, city, state; click en proceed-3. Nota: tras completar pais, CP y numero la app autocompleta (lookup) street, city y state y pisa lo tipeado (observado: Marvin-Krenn-Gasse / Mittersill / Vorarlberg), por lo que no se debe asertar sobre los valores tipeados
+    - expect: Se muestra el paso de pago con payment-method (SELECT) con opciones value: '' (Choose your payment method), bank-transfer, cash-on-delivery, credit-card, buy-now-pay-later, gift-card
+  4. selectOption('cash-on-delivery') en payment-method y click en finish (en este momento el boton dice 'Check payment')
+    - expect: Aparece getByTestId('payment-success-message') (class help-block) con texto exacto 'Payment was successful' (tambien dentro de un .alert.alert-success)
+    - expect: El boton finish (mismo data-test) ahora dice 'Confirm'
+  5. Click en finish ('Confirm')
+    - expect: Se muestra #order-confirmation (div, sin data-test; usar locator('#order-confirmation')) con el texto 'Thanks for your order! Your invoice number is INV-2026000008.'. El numero esta en un <span> dentro: locator('#order-confirmation span'). Formato observado: /^INV-\d{10}$/ (un solo ejemplo; el numero es incremental y cambia en cada pedido, no hardcodear)
+    - expect: La URL sigue en /checkout y el badge cart-quantity deja de existir (carrito vaciado)

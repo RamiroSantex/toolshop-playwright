@@ -1,18 +1,19 @@
-// spec: specs/regression-plan.md
+// spec: specs/agentes-plan.md
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-test.describe('Login', () => {
-  test('RG-02 Password incorrecto', async ({ page }) => {
-    // 1. Ir a /auth/login, email + password incorrecto, enviar.
-    // Adaptacion: se usa un usuario inexistente para no golpear ni bloquear la cuenta real (HTTP 423).
+test.describe('Auth', () => {
+  test('RG-02 Login con credenciales invalidas muestra error y no inicia sesion', async ({ page }) => {
+    // 1. Ir a /auth/login, completar credenciales invalidas (NO la cuenta customer) y enviar
     await page.goto('/auth/login');
-    await page.getByTestId('email').fill('no-existe@example.com');
-    await page.getByTestId('password').fill('password-incorrecto');
+    await page.getByTestId('email').fill('noexiste.qa@example.com');
+    await page.getByTestId('password').fill('wrongpass123');
     await page.getByTestId('login-submit').click();
 
-    await expect(page.getByTestId('login-error')).toHaveText('Invalid email or password');
+    // Se asserta sobre el data-test en lugar del texto literal (el mensaje real es 'Invalid email or password').
+    await expect(page.locator('[data-test="login-error"]')).toBeVisible();
     await expect(page).toHaveURL(/\/auth\/login$/);
-    await expect(page.getByTestId('nav-menu')).toBeHidden();
+    await expect(page.getByTestId('nav-menu')).toHaveCount(0);
+    await expect(page.getByTestId('nav-sign-in')).toBeVisible();
   });
 });

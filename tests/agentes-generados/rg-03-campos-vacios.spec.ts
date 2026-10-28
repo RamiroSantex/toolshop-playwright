@@ -1,10 +1,10 @@
-// spec: specs/regression-plan.md
+// spec: specs/agentes-plan.md
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-test.describe('Login', () => {
-  test('RG-03 Campos vacios', async ({ page }) => {
-    // 1. Ir a /auth/login y enviar sin completar.
+test.describe('Auth', () => {
+  test('RG-03 Login con campos vacios muestra validaciones requeridas', async ({ page }) => {
+    // 1. Ir a /auth/login y click en login-submit sin completar campos
     await page.goto('/auth/login');
     await page.getByTestId('login-submit').click();
 
