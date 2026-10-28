@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-const API = 'https://api.practicesoftwaretesting.com';
+const API = process.env.API_URL ?? 'https://api.practicesoftwaretesting.com';
 
 test.describe('Carrito', () => {
   test('RG-08 Cambiar la cantidad recalcula linea, total y badge', async ({ page, request }) => {

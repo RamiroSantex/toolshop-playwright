@@ -2,7 +2,7 @@
 // seed: tests/seed.spec.ts
 import { test, expect } from '@playwright/test';
 
-const API = 'https://api.practicesoftwaretesting.com';
+const API = process.env.API_URL ?? 'https://api.practicesoftwaretesting.com';
 
 test.describe('Checkout', () => {
   test('RG-10 Checkout completo confirma pedido con numero de factura', async ({ page, request }) => {
